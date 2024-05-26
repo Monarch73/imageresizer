@@ -28,9 +28,26 @@
         top: 0;
         opacity: 0;
     }
-</style>
+    .file-list {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .file-list th, .file-list td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    .file-list tr:nth-child(even){background-color: #f2f2f2;}
+    .file-list tr:hover {background-color: #ddd;}
+    .file-list th {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        text-align: left;
+        background-color: #4CAF50;
+        color: white;
+    }</style>
 </head>
 <body>
+    
     <form action="" method="post" enctype="multipart/form-data">
         <div class="upload-btn-wrapper">
             <button class="btn">Upload Images</button>
@@ -53,7 +70,6 @@
 <?php
 // check if files are uploaded
 if(isset($_FILES['myfile'])) {
-    var_dump($_FILES);
     $errors = [];
     $path = 'uploads/';
     $extensions = ['jpg', 'jpeg', 'png'];
@@ -94,7 +110,7 @@ if(isset($_FILES['myfile'])) {
             // Get the image dimensions
     
             // Calculate new dimensions, keeping aspect ratio
-            $maxResolution = 2000; // Maximum resolution for either width or height
+            $maxResolution = 3000; // Maximum resolution for either width or height
 
             if($width > $height) {
                 // Landscape image
@@ -113,32 +129,42 @@ if(isset($_FILES['myfile'])) {
     
             // Save the resized image
             if ($file_ext == "jpg" || $file_ext == "jpeg") {
-                imagejpeg($dst, $file,75);
+                imagejpeg($dst, $file,85);
             } else if ($file_ext == "png") {
                 imagepng($dst, $file,9);
             }
         } 
         $zip->addFile($file, basename($file));
 
-        // Free up memory
-        imagedestroy($src);
-        imagedestroy($dst);
+        if (isset($src)) {
+            imagedestroy($src);
+            unset($src);
+        }
+        if (isset($dst)) {
+            imagedestroy($dst);
+            unset($dst);
+        }
     }
+    $zip->close();
 } 
-$zip->close();
 
 // Get all existing zip files in the current directory
 $zipFiles = glob('*.zip');
 
+echo "<table class='file-list'>";
+echo "<tr><th>Download</th><th>Delete</th></tr>";
 // After all zip files have been created, iterate over the array
 foreach ($zipFiles as $zipFile) {
     // Generate an HTML link for downloading the file
-    echo "<a href=\"$zipFile\">Download $zipFile</a><br>";
+    $downloadLink = "<a href=\"$zipFile\">Download $zipFile</a>";
 
     // Generate an HTML link for deleting the file
     $encodedFile = urlencode($zipFile);
-    echo "<a href=\"delete.php?file=$encodedFile\">Delete $zipFile</a><br>";
+    $deleteLink = "<a href=\"delete.php?file=$encodedFile\">Delete $zipFile</a>";
+
+    echo "<tr><td>$downloadLink</td><td>$deleteLink</td></tr>";
 }
+echo "</table>";
 ?>
 </body>
 </html>
