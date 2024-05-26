@@ -31,10 +31,11 @@
 </style>
 </head>
 <body>
+    hallo
     <form action="" method="post" enctype="multipart/form-data">
         <div class="upload-btn-wrapper">
             <button class="btn">Upload Images</button>
-            <input type="file" name="myfile" id="file" multiple accept=".jpg, .png, .jepg" onchange="validateFiles(this);">
+            <input type="file" name="myfile[]" id="file" multiple accept=".jpg, .png, .jepg" onchange="validateFiles(this);">
         </div>
         <input type="submit" value="Upload" name="submit">
     </form>
@@ -50,16 +51,20 @@
             }
         }
     </script>
-</body>
-</html>
 <?php
 // check if files are uploaded
 if(isset($_FILES['myfile'])) {
-    var_dump($_FILES['myfile']);
+    var_dump($_FILES);
     $errors = [];
     $path = 'uploads/';
     $extensions = ['jpg', 'jpeg', 'png'];
     $all_files = count($_FILES['myfile']['tmp_name']);
+    $zip = new ZipArchive();
+    $zipName = date('Y-m-d-H-i-s') . '.zip';
+    if ($zip->open($zipName, ZipArchive::CREATE) !== TRUE) {
+        exit("Cannot open <$zipName>\n");
+    }
+
     for($i = 0; $i < $all_files; $i++) {
         $file_name = $_FILES['myfile']['name'][$i];
         $file_tmp = $_FILES['myfile']['tmp_name'][$i];
@@ -74,9 +79,63 @@ if(isset($_FILES['myfile'])) {
             $errors[] = 'File size exceeds limit: ' . $file_name . ' ' . $file_type;
         }
         if(empty($errors)) {
-            move_uploaded_file($file_tmp, $file);
+            if ($file_ext == "jpg" || $file_ext == "jpeg") {
+                $src = imagecreatefromjpeg($file_tmp);
+            } else if ($file_ext == "png") {
+                $src = imagecreatefrompng($file_tmp);
+            }
+    
+            // Get the image dimensions
+            list($width, $height) = getimagesize($file_tmp);
+    
+            // Calculate new dimensions, keeping aspect ratio
+            $maxResolution = 2000; // Maximum resolution for either width or height
+
+            if($width > $height) {
+                // Landscape image
+                $newWidth = $maxResolution;
+                $newHeight = ($height / $width) * $newWidth;
+            } else {
+                // Portrait image
+                $newHeight = $maxResolution;
+                $newWidth = ($width / $height) * $newHeight;
+            }    
+            // Create a new true color image
+            $dst = imagecreatetruecolor($newWidth, $newHeight);
+    
+            // Copy and resize the image
+            imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+    
+            // Save the resized image
+            if ($file_ext == "jpg" || $file_ext == "jpeg") {
+                imagejpeg($dst, $file,75);
+            } else if ($file_ext == "png") {
+                imagepng($dst, $file,9);
+            }
+            $zip->addFile($file, basename($file));
+    
+            // Free up memory
+            imagedestroy($src);
+            imagedestroy($dst);
         }
-        
     }
+    $zip->close();
     if($errors) print_r($errors);
 }
+
+// Get all existing zip files in the current directory
+$zipFiles = glob('*.zip');
+
+// After all zip files have been created, iterate over the array
+foreach ($zipFiles as $zipFile) {
+    // Generate an HTML link for downloading the file
+    echo "<a href=\"$zipFile\">Download $zipFile</a><br>";
+
+    // Generate an HTML link for deleting the file
+    $encodedFile = urlencode($zipFile);
+    echo "<a href=\"delete.php?file=$encodedFile\">Delete $zipFile</a><br>";
+}
+?>
+</body>
+</html>
+
