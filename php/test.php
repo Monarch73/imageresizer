@@ -31,7 +31,6 @@
 </style>
 </head>
 <body>
-    hallo
     <form action="" method="post" enctype="multipart/form-data">
         <div class="upload-btn-wrapper">
             <button class="btn">Upload Images</button>
@@ -73,9 +72,10 @@ if(isset($_FILES['myfile'])) {
         $file_ext = strtolower(end(explode('.', $_FILES['myfile']['name'][$i])));
         $file = $path . $file_name;
         if(!in_array($file_ext, $extensions)) {
-            $errors[] = 'Extension not allowed: ' . $file_name . ' ' . $file_type;
+            // display warning message that tells the user that the current file is skipped
+            echo "File $file_name has an invalid extension and was skipped.<br>";
+            continue;
         }
-        if(empty($errors)) {
         // Get the image dimensions
         list($width, $height) = getimagesize($file_tmp);
 
@@ -83,7 +83,8 @@ if(isset($_FILES['myfile'])) {
         if ($width * $height < 4000000) {
             // Move the uploaded file to the desired location without resizing
             move_uploaded_file($file_tmp, $file);
-        } else {
+        } 
+        else {
             if ($file_ext == "jpg" || $file_ext == "jpeg") {
                 $src = imagecreatefromjpeg($file_tmp);
             } else if ($file_ext == "png") {
@@ -122,11 +123,9 @@ if(isset($_FILES['myfile'])) {
         // Free up memory
         imagedestroy($src);
         imagedestroy($dst);
-        
     }
-    $zip->close();
-    if($errors) print_r($errors);
-}
+} 
+$zip->close();
 
 // Get all existing zip files in the current directory
 $zipFiles = glob('*.zip');
