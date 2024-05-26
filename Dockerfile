@@ -1,0 +1,1 @@
+FROM trafex/php-nginx

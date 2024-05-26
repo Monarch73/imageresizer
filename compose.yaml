@@ -1,0 +1,7 @@
+services:
+  main:
+    build: .
+    ports:
+      - "8030:8080/tcp"
+    volumes:
+      - ./php:/var/www/html
