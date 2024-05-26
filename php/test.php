@@ -75,10 +75,15 @@ if(isset($_FILES['myfile'])) {
         if(!in_array($file_ext, $extensions)) {
             $errors[] = 'Extension not allowed: ' . $file_name . ' ' . $file_type;
         }
-        if($file_size > 2097152) {
-            $errors[] = 'File size exceeds limit: ' . $file_name . ' ' . $file_type;
-        }
         if(empty($errors)) {
+        // Get the image dimensions
+        list($width, $height) = getimagesize($file_tmp);
+
+        // Check if the resolution is less than 4MPixels
+        if ($width * $height < 4000000) {
+            // Move the uploaded file to the desired location without resizing
+            move_uploaded_file($file_tmp, $file);
+        } else {
             if ($file_ext == "jpg" || $file_ext == "jpeg") {
                 $src = imagecreatefromjpeg($file_tmp);
             } else if ($file_ext == "png") {
@@ -86,7 +91,6 @@ if(isset($_FILES['myfile'])) {
             }
     
             // Get the image dimensions
-            list($width, $height) = getimagesize($file_tmp);
     
             // Calculate new dimensions, keeping aspect ratio
             $maxResolution = 2000; // Maximum resolution for either width or height
@@ -112,12 +116,13 @@ if(isset($_FILES['myfile'])) {
             } else if ($file_ext == "png") {
                 imagepng($dst, $file,9);
             }
-            $zip->addFile($file, basename($file));
-    
-            // Free up memory
-            imagedestroy($src);
-            imagedestroy($dst);
-        }
+        } 
+        $zip->addFile($file, basename($file));
+
+        // Free up memory
+        imagedestroy($src);
+        imagedestroy($dst);
+        
     }
     $zip->close();
     if($errors) print_r($errors);
@@ -138,4 +143,3 @@ foreach ($zipFiles as $zipFile) {
 ?>
 </body>
 </html>
-

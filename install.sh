@@ -3,4 +3,5 @@
 sed -i '/server_name/i client_max_body_size 100M;' /etc/nginx/conf.d/default.conf
 apk add --no-cache php83-zip
 apk add --no-cache libzip-dev
+chown -R nobody:nobody /var/www/html
 
